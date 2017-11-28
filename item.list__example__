@@ -1,0 +1,3 @@
+#Sintax
+#item|one of valid words|any of invalid words|max|min|exceptionItemIDs
+title|want_this or_this|any of this|60|20|215465462

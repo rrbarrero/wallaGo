@@ -1,0 +1,6 @@
+{
+    "DEBUG": false,
+    "URL_TPLE": "http://es.wallapop.com/rest/items?minPrice=%s&maxPrice=%s&dist=&order=creationDate-des&lat=41.398077&lng=2.170432&kws=%s",
+    "SCORING_VALIDATION": false,
+    "SCORING_VALIDATION_MIN_STARTS": 4
+}
