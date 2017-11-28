@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/tkanos/gonfig"
 )
@@ -16,7 +17,8 @@ func check(e error) {
 	}
 }
 
-func check_item(line string) {
+func check_item(wg * sync.WaitGroup, line string) {
+	defer wg.Done()
 	if len(line) == 0 {
 		return
 	}
@@ -30,6 +32,7 @@ func check_item(line string) {
 }
 
 func main() {
+	var wg sync.WaitGroup
 	config = Configuration{}
 	err := gonfig.GetConf("config.json", &config)
 	if err != nil {
@@ -42,10 +45,12 @@ func main() {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		check_item(line)
+		wg.Add(1)
+		go check_item(&wg, line)
 	}
 
 	err = scanner.Err()
 	check(err)
+	wg.Wait()
 
 }
