@@ -49,7 +49,7 @@ type WallaUser struct {
 	ScreenName string          `json:"screenName"`
 	URL        string          `json:"url"`
 	Email      string          `json:"email"`
-	StatUser   WallaStatsUser  `json:"statUser"`
+	StatsUser  WallaStatsUser  `json:"statsUser"`
 	Validation WallaValidation `json:"validation"`
 }
 

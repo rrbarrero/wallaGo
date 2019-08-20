@@ -131,15 +131,27 @@ func compare(item Item, wallaItem WallaItem) bool {
 		return false
 	}
 	if wallaItem.SalePrice > item.Max {
+		if config.DEBUG == true {
+			log.Debug("Excluded by MAX price: " + wallaItem.URL)
+		}
 		return false
 	}
 	if wallaItem.SalePrice < item.Min {
+		if config.DEBUG == true {
+			log.Debug("Excluded by MIN price: " + wallaItem.URL)
+		}
 		return false
 	}
 	if wallaItem.Sold == true {
+		if config.DEBUG == true {
+			log.Debug("Excluded by SOLD: " + wallaItem.URL)
+		}
 		return false
 	}
 	if wallaItem.SellerUser.Banned == true {
+		if config.DEBUG == true {
+			log.Debug("Excluded by BANNED: " + wallaItem.URL)
+		}
 		return false
 	}
 	if config.SCORING_VALIDATION == true {
@@ -149,15 +161,13 @@ func compare(item Item, wallaItem WallaItem) bool {
 	}
 	if check_invalid_words(item.InvalidWords, wallaItem.Title) == true {
 		if config.DEBUG == true {
-			log.Debug("Compare false by invalid words, title")
-			log.Debug(WALLA_ITEM_URL + wallaItem.URL)
+			log.Debug("Excluded by invalid words, title: " + wallaItem.URL)
 		}
 		return false
 	}
 	if check_invalid_words(item.InvalidWords, wallaItem.Description) == true {
 		if config.DEBUG == true {
-			log.Debug("Compare false by invalid words, description")
-			log.Debug(WALLA_ITEM_URL + wallaItem.URL)
+			log.Debug("Excluded by invalid words, description: " + wallaItem.URL)
 		}
 		return false
 	}
@@ -165,14 +175,19 @@ func compare(item Item, wallaItem WallaItem) bool {
 	valid_word_title := check_valid_words(item.ValidWords, wallaItem.Title)
 	if valid_word_desc == false && valid_word_title == false {
 		if config.DEBUG == true {
-			log.Debug("Compare false by valid words")
-			log.Debug(WALLA_ITEM_URL + wallaItem.URL)
+			log.Debug("Excluded by valid words: " + wallaItem.URL)
 		}
 		return false
 	}
 	if check_if_exception_id(item, wallaItem) == true {
 		if config.DEBUG == true {
-			log.Debug("Compare false by check_if_exception_id")
+			log.Debug("Excluded by check_if_exception_id:" + wallaItem.URL)
+		}
+		return false
+	}
+	if wallaItem.SellerUser.StatsUser.ReceivedReviewsCount < config.MIN_RECEIVED_REVIEWS_COUNT {
+		if config.DEBUG == true {
+			log.Debug("Excluded by RECEIVED_REVIEWS_COUNT: " + wallaItem.URL)
 		}
 		return false
 	}
