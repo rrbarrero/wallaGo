@@ -19,7 +19,7 @@ var format = logging.MustStringFormatter(
 
 func check(e error) {
 	if e != nil {
-		log.Error(e)
+		log.Error(e.Error())
 		panic(e)
 	}
 }
