@@ -1,9 +1,9 @@
 package main
 
-const WALLA_ITEM_URL = "https://es.wallapop.com/item/"
+const WALLA_ITEM_URL = ""
 
 type WallaItems struct {
-	Items []WallaItem `json:"items"`
+	Items []WallaItem
 }
 
 type WallaItem struct {
@@ -15,9 +15,9 @@ type WallaItem struct {
 	Category           string                  `json:"category"`
 	MainImage          WallaImage              `json:"mainImage"`
 	Images             []WallaImage            `json:"images"`
-	SalePrice          float32                 `json:"salePrice"`
+	SalePrice          float64                 `json:"salePrice"`
 	SellerUser         WallaUser               `json:"sellerUser"`
-	URL                string                  `json:"url"`
+	URL                string                  `json:"itemURL"`
 	PictureURL         string                  `json:"pictureURL"`
 	Sold               bool                    `json:"sold"`
 	Reserved           bool                    `json:"reserved"`

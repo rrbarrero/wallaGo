@@ -8,25 +8,33 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/tidwall/gjson"
 )
 
 type Item struct {
 	Name         string
 	ValidWords   []string
 	InvalidWords []string
-	Max          string
-	Min          string
+	Max          float64
+	Min          float64
 	ExceptionIDs []int64
 }
 
 func NewItem(itemLine string) *Item {
 	fields := strings.Split(itemLine, "|")
 	item := new(Item)
+	item.Min = 0
+	item.Max = 0
 	item.Name = fields[0]
 	item.ValidWords = strings.Split(fields[1], " ")
 	item.InvalidWords = strings.Split(fields[2], " ")
-	item.Max = fields[3]
-	item.Min = fields[4]
+	if max, err := strconv.ParseFloat(fields[3], 64); err == nil {
+		item.Max = max
+	}
+	if min, err := strconv.ParseFloat(fields[4], 64); err == nil {
+		item.Min = min
+	}
 	item.ExceptionIDs = get_exception_ids(fields[5])
 	return item
 }
@@ -47,15 +55,24 @@ func get_exception_ids(field string) []int64 {
 // Hace la búsqueda en wallapop y nos devuelve
 // un objeto tipo WallaItems que a su vez contiene
 // Items que son los resultados de dicha búsqueda.
-func search(url string) (*WallaItems, error) {
+func search(url string) ([]WallaItem, error) {
 	res, err := http.Get(url)
 	check(err)
 	defer res.Body.Close()
-	var wallaItems = new(WallaItems)
+	var wallaItems []WallaItem
 	body, err := ioutil.ReadAll(res.Body)
-	check(err)
-	err = json.Unmarshal(body, &wallaItems)
-	check(err)
+	result := gjson.Get(string(body), "items")
+	result.ForEach(func(key, value gjson.Result) bool {
+		var item WallaItem
+		_item := gjson.Get(value.String(), "item")
+		err = json.Unmarshal([]byte(_item.String()), &item)
+		check(err)
+		if config.DEBUG == true {
+			log.Debug(item.URL)
+		}
+		wallaItems = append(wallaItems, item)
+		return true // keep iterating
+	})
 	return wallaItems, err
 }
 
@@ -113,6 +130,12 @@ func compare(item Item, wallaItem WallaItem) bool {
 	if wallaItem.Reserved == true {
 		return false
 	}
+	if wallaItem.SalePrice > item.Max {
+		return false
+	}
+	if wallaItem.SalePrice < item.Min {
+		return false
+	}
 	if wallaItem.Sold == true {
 		return false
 	}
@@ -126,15 +149,15 @@ func compare(item Item, wallaItem WallaItem) bool {
 	}
 	if check_invalid_words(item.InvalidWords, wallaItem.Title) == true {
 		if config.DEBUG == true {
-			fmt.Println("DEBUG: ", "Compare false by invalid words, title")
-			fmt.Println("DEBUG: ", WALLA_ITEM_URL+wallaItem.URL)
+			log.Debug("Compare false by invalid words, title")
+			log.Debug(WALLA_ITEM_URL + wallaItem.URL)
 		}
 		return false
 	}
 	if check_invalid_words(item.InvalidWords, wallaItem.Description) == true {
 		if config.DEBUG == true {
-			fmt.Println("DEBUG: ", "Compare false by invalid words, description")
-			fmt.Println("DEBUG: ", WALLA_ITEM_URL+wallaItem.URL)
+			log.Debug("Compare false by invalid words, description")
+			log.Debug(WALLA_ITEM_URL + wallaItem.URL)
 		}
 		return false
 	}
@@ -142,14 +165,14 @@ func compare(item Item, wallaItem WallaItem) bool {
 	valid_word_title := check_valid_words(item.ValidWords, wallaItem.Title)
 	if valid_word_desc == false && valid_word_title == false {
 		if config.DEBUG == true {
-			fmt.Println("DEBUG: ", "Compare false by valid words")
-			fmt.Println("DEBUG: ", WALLA_ITEM_URL+wallaItem.URL)
+			log.Debug("Compare false by valid words")
+			log.Debug(WALLA_ITEM_URL + wallaItem.URL)
 		}
 		return false
 	}
 	if check_if_exception_id(item, wallaItem) == true {
 		if config.DEBUG == true {
-			fmt.Println("DEBUG: ", "Compare false by check_if_exception_id")
+			log.Debug("Compare false by check_if_exception_id")
 		}
 		return false
 	}
@@ -158,13 +181,18 @@ func compare(item Item, wallaItem WallaItem) bool {
 
 func (item Item) CheckItem() []WallaItem {
 	var result []WallaItem
-	query := fmt.Sprintf(config.URL_TPLE, item.Min, item.Max, url.QueryEscape(item.Name))
+	query := fmt.Sprintf(
+		config.URL_TPLE,
+		fmt.Sprintf("%f", item.Min),
+		fmt.Sprintf("%f", item.Max),
+		url.QueryEscape(item.Name),
+	)
 	if config.DEBUG == true {
-		fmt.Println("DEBUG: ", query)
+		log.Debug(query)
 	}
 	wallaItems, err := search(query)
 	check(err)
-	for _, wallaItem := range wallaItems.Items {
+	for _, wallaItem := range wallaItems {
 		if compare(item, wallaItem) == true {
 			result = append(result, wallaItem)
 		}
